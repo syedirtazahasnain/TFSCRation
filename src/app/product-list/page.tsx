@@ -12,6 +12,7 @@ export default function ProductListPage() {
   const [error, setError] = useState<string>('');
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [totalPages, setTotalPages] = useState<number>(1);
+  const [apiResponse, setApiResponse] = useState<string>(''); // To store API response message
   const router = useRouter();
 
   // Fetch products from the backend
@@ -49,56 +50,8 @@ export default function ProductListPage() {
     }
   };
 
-  // Add product to cart
-  const addToCart = (productId: number, quantity: number) => {
-    if (quantity <= 0) {
-      alert('Quantity must be greater than 0.');
-      return;
-    }
-
-    const existingProduct = cart.find((item) => item.product_id === productId);
-
-    if (existingProduct) {
-      // Update quantity if product already exists in cart
-      setCart((prevCart) =>
-        prevCart.map((item) =>
-          item.product_id === productId
-            ? { ...item, quantity: item.quantity + quantity }
-            : item
-        )
-      );
-    } else {
-      // Add new product to cart
-      setCart((prevCart) => [
-        ...prevCart,
-        { product_id: productId, quantity },
-      ]);
-    }
-  };
-
-  // Update product quantity in cart
-  const updateQuantity = (productId: number, quantity: number) => {
-    if (quantity <= 0) {
-      alert('Quantity must be greater than 0.');
-      return;
-    }
-
-    setCart((prevCart) =>
-      prevCart.map((item) =>
-        item.product_id === productId ? { ...item, quantity } : item
-      )
-    );
-  };
-
-  // Remove product from cart
-  const removeFromCart = (productId: number) => {
-    setCart((prevCart) =>
-      prevCart.filter((item) => item.product_id !== productId)
-    );
-  };
-
-  // Submit cart to backend
-  const submitCart = async () => {
+  // Sync cart with backend
+  const syncCartWithBackend = async (cartItems: any[]) => {
     try {
       const token = localStorage.getItem('token');
       if (!token) {
@@ -112,19 +65,96 @@ export default function ProductListPage() {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`,
         },
+        body: JSON.stringify({ products: cartItems }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Failed to sync cart with backend');
+      }
+    } catch (err) {
+      setError(err.message || 'Failed to sync cart with backend');
+    }
+  };
+
+  // Add product to cart
+  const addToCart = async (productId: number, quantity: number) => {
+    if (quantity <= 0) {
+      alert('Quantity must be greater than 0.');
+      return;
+    }
+
+    const existingProduct = cart.find((item) => item.product_id === productId);
+
+    let updatedCart;
+    if (existingProduct) {
+      // Update quantity if product already exists in cart
+      updatedCart = cart.map((item) =>
+        item.product_id === productId
+          ? { ...item, quantity: item.quantity + quantity }
+          : item
+      );
+    } else {
+      // Add new product to cart
+      updatedCart = [...cart, { product_id: productId, quantity }];
+    }
+
+    setCart(updatedCart);
+    await syncCartWithBackend(updatedCart); // Sync cart with backend
+  };
+
+  // Update product quantity in cart
+  const updateQuantity = async (productId: number, quantity: number) => {
+    if (quantity <= 0) {
+      alert('Quantity must be greater than 0.');
+      return;
+    }
+
+    const updatedCart = cart.map((item) =>
+      item.product_id === productId ? { ...item, quantity } : item
+    );
+
+    setCart(updatedCart);
+    await syncCartWithBackend(updatedCart); // Sync cart with backend
+  };
+
+  // Remove product from cart
+  const removeFromCart = async (productId: number) => {
+    const updatedCart = cart.filter((item) => item.product_id !== productId);
+
+    setCart(updatedCart);
+    await syncCartWithBackend(updatedCart); // Sync cart with backend
+  };
+
+  // Submit cart to place order
+  const submitCart = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        router.push('/login');
+        return;
+      }
+
+      const response = await fetch('http://household.test/api/orders/place', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
         body: JSON.stringify({ products: cart }),
       });
 
       const data = await response.json();
 
       if (response.ok) {
-        alert('Products added to cart successfully!');
+        setApiResponse(data.message || 'Order placed successfully!');
         setCart([]); // Clear the cart after successful submission
       } else {
-        throw new Error(data.message || 'Failed to add products to cart');
+        throw new Error(data.message || 'Failed to place order');
       }
     } catch (err) {
-      setError('Failed to add products to cart. Please try again.');
+      setApiResponse(err.message || 'Failed to place order. Please try again.');
     }
   };
 
@@ -147,6 +177,7 @@ export default function ProductListPage() {
     <div className="min-h-screen bg-gray-100 p-6">
       <h1 className="text-2xl font-bold mb-6">Product List</h1>
       {error && <p className="text-red-500 mb-4">{error}</p>}
+      {apiResponse && <p className="text-green-500 mb-4">{apiResponse}</p>}
       {loading ? (
         <p>Loading...</p>
       ) : (
@@ -270,3 +301,4 @@ export default function ProductListPage() {
     </div>
   );
 }
+
