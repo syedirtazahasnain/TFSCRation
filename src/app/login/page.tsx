@@ -2,37 +2,51 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 
 export default function LoginPage() {
   const [email, setEmail] = useState<string>('');
   const [password, setPassword] = useState<string>('');
   const [error, setError] = useState<string>('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    setIsSubmitting(true);
 
     try {
-      // Use the form values (email and password) from the state
-      const response = await fetch('/api/auth/login', {
+      const response = await fetch('http://household.test/api/login', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ email, password }), // Use the form values
+        body: JSON.stringify({ 
+          email: email.trim(),
+          password: password.trim() 
+        }),
       });
 
       const data = await response.json();
 
-      if (response.ok) {
-        localStorage.setItem('token', data.data.token);
-        router.push('/product-list');
-      } else {
-        setError(data.message || 'Login failed');
+      if (!response.ok) {
+        // Handle API error responses
+        if (data.status_code === 401) {
+          setError(data.message || 'The email or password you entered is incorrect.');
+        } else {
+          setError(data.message || 'Login failed. Please try again.');
+        }
+        return;
       }
+
+      // Success case
+      localStorage.setItem('token', data.data.token);
+      router.push('/product-list');
     } catch (err) {
-      setError('An error occurred. Please try again.');
+      setError('Network error. Please check your connection and try again.');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -40,7 +54,14 @@ export default function LoginPage() {
     <div className="min-h-screen flex items-center justify-center bg-gray-100">
       <div className="bg-white p-8 rounded-lg shadow-md w-full max-w-md">
         <h1 className="text-2xl font-bold mb-6 text-center">Login</h1>
-        {error && <p className="text-red-500 mb-4">{error}</p>}
+        
+        {/* Error Message */}
+        {error && (
+          <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded text-center">
+            {error}
+          </div>
+        )}
+
         <form onSubmit={handleSubmit}>
           <div className="mb-4">
             <label className="block text-sm font-medium mb-2" htmlFor="email">
@@ -51,10 +72,12 @@ export default function LoginPage() {
               id="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full px-3 py-2 border rounded-lg"
+              className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               required
+              autoComplete="email"
             />
           </div>
+          
           <div className="mb-6">
             <label className="block text-sm font-medium mb-2" htmlFor="password">
               Password
@@ -64,13 +87,30 @@ export default function LoginPage() {
               id="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full px-3 py-2 border rounded-lg"
+              className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               required
+              autoComplete="current-password"
             />
           </div>
-          <button type="submit" className="w-full bg-blue-500 text-white py-2 rounded-lg hover:bg-blue-600">
-            Login
+          
+          <button 
+            type="submit" 
+            disabled={isSubmitting}
+            className={`w-full bg-blue-500 text-white py-2 rounded-lg hover:bg-blue-600 mb-4 transition-colors
+              ${isSubmitting ? 'opacity-70 cursor-not-allowed' : ''}`}
+          >
+            {isSubmitting ? 'Logging in...' : 'Login'}
           </button>
+          
+          <div className="text-center text-sm">
+            <span className="text-gray-600">Don't have an account? </span>
+            <Link 
+              href="/signup" 
+              className="text-blue-500 hover:text-blue-700 font-medium"
+            >
+              Sign up here
+            </Link>
+          </div>
         </form>
       </div>
     </div>

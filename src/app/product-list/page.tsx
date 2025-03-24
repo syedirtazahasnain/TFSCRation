@@ -341,6 +341,7 @@ export default function ProductListPage() {
         setCart([]); // Clear the cart after successful submission
         setLocalQuantities({}); // Clear local quantities
         setCartData(null); // Clear cart data
+        router.push(`/orders/${data.data.id}`);
       } else {
         throw new Error(data.message || "Failed to place order");
       }
