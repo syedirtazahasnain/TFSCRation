@@ -4,25 +4,55 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Header from "../_components/Header";
 
+interface CartItem {
+  id?: number;
+  product_id: number;
+  quantity: number;
+  unit_price?: number;
+  total?: number;
+  product?: {
+    id: number;
+    name: string;
+    detail: string;
+    price: string;
+  };
+}
+
+interface CartData {
+  id: number;
+  user_id: number;
+  items: CartItem[];
+  payable_amount: number;
+}
+
+interface Product {
+  id: number;
+  name: string;
+  detail: string;
+  price: number;
+}
+
 export default function ProductListPage() {
-  const [products, setProducts] = useState<any[]>([]); // Products for the current page
-  const [allProducts, setAllProducts] = useState<any[]>([]); // All products fetched so far
-  const [cart, setCart] = useState<any[]>([]);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [allProducts, setAllProducts] = useState<Product[]>([]);
+  const [cart, setCart] = useState<CartItem[]>([]);
+  const [cartData, setCartData] = useState<CartData | null>(null);
   const [isCartOpen, setIsCartOpen] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string>("");
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [totalPages, setTotalPages] = useState<number>(1);
-  const [apiResponse, setApiResponse] = useState<string>(""); // To store API response message
+  const [apiResponse, setApiResponse] = useState<string>("");
+  const [localQuantities, setLocalQuantities] = useState<{[key: number]: number}>({});
   const router = useRouter();
 
   // Fetch products from the backend
   const fetchProducts = async (page: number) => {
     try {
       setLoading(true);
-      const token = localStorage.getItem("token"); // Get the token from localStorage
+      const token = localStorage.getItem("token");
       if (!token) {
-        router.push("/login"); // Redirect to login if no token is found
+        router.push("/login");
         return;
       }
 
@@ -30,7 +60,7 @@ export default function ProductListPage() {
         `http://household.test/api/products?page=${page}`,
         {
           headers: {
-            Authorization: `Bearer ${token}`, // Pass the bearer token
+            Authorization: `Bearer ${token}`,
           },
         }
       );
@@ -40,9 +70,9 @@ export default function ProductListPage() {
       }
 
       const data = await response.json();
-      setProducts(data.data.data); // This is correct - it matches the actual response
-      setAllProducts((prev) => [...prev, ...data.data.data]); // Also correct
-      setTotalPages(data.data.last_page); // Correct
+      setProducts(data.data.data);
+      setAllProducts((prev) => [...prev, ...data.data.data]);
+      setTotalPages(data.data.last_page);
       setCurrentPage(data.data.current_page);
     } catch (err) {
       setError("Failed to fetch products. Please try again.");
@@ -51,8 +81,8 @@ export default function ProductListPage() {
     }
   };
 
-  // Sync cart with backend
-  const syncCartWithBackend = async (cartItems: any[]) => {
+  // Fetch cart from backend
+  const fetchCart = async () => {
     try {
       const token = localStorage.getItem("token");
       if (!token) {
@@ -60,23 +90,131 @@ export default function ProductListPage() {
         return;
       }
 
+      const response = await fetch("http://household.test/api/cart", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to fetch cart");
+      }
+
+      const data = await response.json();
+      if (data.data && data.data.cart_data) {
+        setCartData(data.data.cart_data);
+        const cartItems = data.data.cart_data.items.map((item: any) => ({
+          id: item.id,
+          product_id: item.product_id,
+          quantity: parseInt(item.quantity),
+          unit_price: parseFloat(item.unit_price),
+          total: parseFloat(item.total),
+          product: item.product
+        }));
+        setCart(cartItems);
+        
+        // Initialize local quantities
+        const quantities: {[key: number]: number} = {};
+        cartItems.forEach((item: CartItem) => {
+          quantities[item.product_id] = item.quantity;
+        });
+        setLocalQuantities(quantities);
+      }
+    } catch (err) {
+      console.error("Error fetching cart:", err);
+    }
+  };
+
+  // Sync cart with backend
+  const syncCartWithBackend = async (cartItems: CartItem[]) => {
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        router.push("/login");
+        return;
+      }
+  
       const response = await fetch("http://household.test/api/cart/add", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ products: cartItems }),
+        body: JSON.stringify({ 
+          products: cartItems.map(item => ({
+            product_id: item.product_id,
+            quantity: item.quantity
+          }))
+        }),
       });
-
+  
       const data = await response.json();
-
+  
       if (!response.ok) {
         throw new Error(data.message || "Failed to sync cart with backend");
+      }
+  
+      // Update cart with backend response
+      if (data.data && data.data.cart_data) {
+        // The response structure is different for add/update vs get cart
+        // For add/update, cart_data is an array, not an object with items
+        const updatedCart = Array.isArray(data.data.cart_data) 
+          ? data.data.cart_data.map((item: any) => ({
+              id: item.id,
+              product_id: item.product_id,
+              quantity: parseInt(item.quantity),
+              unit_price: parseFloat(item.unit_price),
+              total: parseFloat(item.total),
+              // Product info might not be included in the response
+              product: allProducts.find(p => p.id === item.product_id) || undefined
+            }))
+          : data.data.cart_data.items.map((item: any) => ({
+              id: item.id,
+              product_id: item.product_id,
+              quantity: parseInt(item.quantity),
+              unit_price: parseFloat(item.unit_price),
+              total: parseFloat(item.total),
+              product: item.product
+            }));
+  
+        setCart(updatedCart);
+        
+        // Update local quantities
+        const quantities: {[key: number]: number} = {};
+        updatedCart.forEach((item: CartItem) => {
+          quantities[item.product_id] = item.quantity;
+        });
+        setLocalQuantities(quantities);
+  
+        // If we have the full cart data (from get cart), set it
+        if (data.data.cart_data.payable_amount !== undefined) {
+          setCartData(data.data.cart_data);
+        }
       }
     } catch (err) {
       setError(err.message || "Failed to sync cart with backend");
     }
+  };
+
+  // Update cart state from backend response
+  const updateCartState = (cartData: any) => {
+    setCartData(cartData);
+    const cartItems = cartData.items.map((item: any) => ({
+      id: item.id,
+      product_id: item.product_id,
+      quantity: parseInt(item.quantity),
+      unit_price: parseFloat(item.unit_price),
+      total: parseFloat(item.total),
+      product: item.product
+    }));
+    setCart(cartItems);
+    
+    // Update local quantities
+    const quantities: {[key: number]: number} = {};
+    cartItems.forEach((item: CartItem) => {
+      quantities[item.product_id] = item.quantity;
+    });
+    setLocalQuantities(quantities);
   };
 
   // Add product to cart
@@ -85,47 +223,97 @@ export default function ProductListPage() {
       alert("Quantity must be greater than 0.");
       return;
     }
-
+  
+    // Use the current local quantity if available
+    const finalQuantity = localQuantities[productId] || quantity;
+  
     const existingProduct = cart.find((item) => item.product_id === productId);
-
+  
     let updatedCart;
     if (existingProduct) {
       // Update quantity if product already exists in cart
       updatedCart = cart.map((item) =>
         item.product_id === productId
-          ? { ...item, quantity: item.quantity + quantity }
+          ? { ...item, quantity: finalQuantity }
           : item
       );
     } else {
       // Add new product to cart
-      updatedCart = [...cart, { product_id: productId, quantity }];
+      updatedCart = [...cart, { product_id: productId, quantity: finalQuantity }];
     }
-
-    setCart(updatedCart);
-    await syncCartWithBackend(updatedCart); // Sync cart with backend
+  
+    await syncCartWithBackend(updatedCart);
   };
 
-  // Update product quantity in cart
-  const updateQuantity = async (productId: number, quantity: number) => {
-    if (quantity <= 0) {
-      alert("Quantity must be greater than 0.");
-      return;
-    }
-
-    const updatedCart = cart.map((item) =>
-      item.product_id === productId ? { ...item, quantity } : item
-    );
-
-    setCart(updatedCart);
-    await syncCartWithBackend(updatedCart); // Sync cart with backend
+  // Update local quantity state
+  const updateLocalQuantity = (productId: number, value: number) => {
+    setLocalQuantities(prev => ({
+      ...prev,
+      [productId]: value
+    }));
   };
 
-  // Remove product from cart
-  const removeFromCart = async (productId: number) => {
-    const updatedCart = cart.filter((item) => item.product_id !== productId);
+  // Remove item from cart
+  const removeFromCart = async (itemId: number) => {
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        router.push("/login");
+        return;
+      }
 
-    setCart(updatedCart);
-    await syncCartWithBackend(updatedCart); // Sync cart with backend
+      const response = await fetch(`http://household.test/api/cart/remove/${itemId}`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || "Failed to remove item from cart");
+      }
+
+      // Update cart with backend response
+      if (data.data && data.data.cart_data) {
+        updateCartState(data.data.cart_data);
+      }
+    } catch (err) {
+      setError(err.message || "Failed to remove item from cart");
+    }
+  };
+
+  // Clear entire cart
+  const clearCart = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        router.push("/login");
+        return;
+      }
+
+      const response = await fetch("http://household.test/api/cart/clear", {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || "Failed to clear cart");
+      }
+
+      // Clear cart state
+      setCart([]);
+      setCartData(null);
+      setLocalQuantities({});
+      setApiResponse("Cart cleared successfully");
+    } catch (err) {
+      setError(err.message || "Failed to clear cart");
+    }
   };
 
   // Submit cart to place order
@@ -151,6 +339,8 @@ export default function ProductListPage() {
       if (response.ok) {
         setApiResponse(data.message || "Order placed successfully!");
         setCart([]); // Clear the cart after successful submission
+        setLocalQuantities({}); // Clear local quantities
+        setCartData(null); // Clear cart data
       } else {
         throw new Error(data.message || "Failed to place order");
       }
@@ -159,17 +349,15 @@ export default function ProductListPage() {
     }
   };
 
-  // Fetch products when the page loads or when the page number changes
+  // Fetch products and cart when the page loads or when the page number changes
   useEffect(() => {
     fetchProducts(currentPage);
+    fetchCart();
   }, [currentPage]);
 
   // Calculate total price and quantity
-  const totalPrice = cart.reduce(
-    (total, item) =>
-      total +
-      item.quantity *
-        (allProducts.find((p) => p.id === item.product_id)?.price || 0),
+  const totalPrice = cartData?.payable_amount || cart.reduce(
+    (total, item) => total + (item.total || 0),
     0
   );
   const totalQuantity = cart.reduce((total, item) => total + item.quantity, 0);
@@ -191,7 +379,7 @@ export default function ProductListPage() {
                   const cartItem = cart.find(
                     (item) => item.product_id === product.id
                   );
-                  const quantity = cartItem ? cartItem.quantity : 1;
+                  const quantity = localQuantities[product.id] || 1;
 
                   return (
                     <div
@@ -204,24 +392,24 @@ export default function ProductListPage() {
                       <p className="text-gray-600 mb-4">{product.detail}</p>
                       <p className="text-lg font-bold">${product.price}</p>
                       <div className="flex items-center mt-4">
-                        <button
-                          onClick={() => addToCart(product.id, 1)}
-                          className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600"
-                        >
-                          Add to Cart
-                        </button>
                         <input
                           type="number"
                           min="1"
                           value={quantity}
                           onChange={(e) => {
                             const value = parseInt(e.target.value);
-                            if (value > 0) {
-                              updateQuantity(product.id, value);
+                            if (!isNaN(value) && value > 0) {
+                              updateLocalQuantity(product.id, value);
                             }
                           }}
-                          className="ml-4 w-16 px-2 py-1 border rounded-lg"
+                          className="w-16 px-2 py-1 border rounded-lg mr-2"
                         />
+                        <button
+                          onClick={() => addToCart(product.id, quantity)}
+                          className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600"
+                        >
+                          {cartItem ? "Update Cart" : "Add to Cart"}
+                        </button>
                       </div>
                     </div>
                   );
@@ -257,7 +445,7 @@ export default function ProductListPage() {
             onClick={() => setIsCartOpen(!isCartOpen)}
             className="absolute top-2 right-2 text-gray-600 hover:text-gray-900"
           >
-            {isCartOpen ? "✕" : "🛒"}
+            {isCartOpen ? "✕" : `🛒 ${totalQuantity}`}
           </button>
           {isCartOpen && (
             <>
@@ -268,22 +456,21 @@ export default function ProductListPage() {
                 <>
                   <ul className="max-h-64 overflow-y-auto">
                     {cart.map((item) => {
-                      const product = allProducts.find(
+                      const product = item.product || allProducts.find(
                         (p) => p.id === item.product_id
                       );
                       return (
-                        <li key={item.product_id} className="mb-4">
+                        <li key={item.id || item.product_id} className="mb-4">
                           <div className="flex justify-between items-center">
                             <div>
                               <h3 className="font-semibold">{product?.name}</h3>
                               <p>Quantity: {item.quantity}</p>
                               <p>
-                                Price: $
-                                {(product?.price * item.quantity).toFixed(2)}
+                                Price: ${item.unit_price?.toFixed(2)} × {item.quantity} = ${item.total?.toFixed(2)}
                               </p>
                             </div>
                             <button
-                              onClick={() => removeFromCart(item.product_id)}
+                              onClick={() => removeFromCart(item.id!)}
                               className="text-red-500 hover:text-red-700"
                             >
                               Remove
@@ -299,12 +486,20 @@ export default function ProductListPage() {
                       Total Price: ${totalPrice.toFixed(2)}
                     </p>
                   </div>
-                  <button
-                    onClick={submitCart}
-                    className="w-full bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 mt-4"
-                  >
-                    Submit Cart
-                  </button>
+                  <div className="flex space-x-2 mt-4">
+                    <button
+                      onClick={clearCart}
+                      className="flex-1 bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600"
+                    >
+                      Clear Cart
+                    </button>
+                    <button
+                      onClick={submitCart}
+                      className="flex-1 bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600"
+                    >
+                      Submit Cart
+                    </button>
+                  </div>
                 </>
               )}
             </>
