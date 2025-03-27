@@ -8,6 +8,7 @@ interface UserData {
   name: string;
   email: string;
   my_role: string;
+  role?: string;
   created_at: string;
   updated_at: string;
 }
@@ -48,7 +49,7 @@ function PasswordUpdateForm() {
     try {
       const token = localStorage.getItem('token');
       if (!token) {
-        router.push('/login');
+        router.push('/auth/login');
         return;
       }
 
@@ -184,7 +185,8 @@ function PasswordUpdateForm() {
   );
 }
 
-export default function UserProfile() {
+// export default function UserProfile() {
+  export default function UserProfile({ my_role }: UserData) {
   const [user, setUser] = useState<UserData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -195,13 +197,14 @@ export default function UserProfile() {
       try {
         const token = localStorage.getItem('token');
         if (!token) {
-          router.push('/login');
+          router.push('/auth/login');
           return;
         }
 
         const response = await fetch('http://household.test/api/user-details', {
           headers: {
             Authorization: `Bearer ${token}`,
+            'Accept': 'application/json',
           },
         });
 

@@ -1,23 +1,50 @@
+import type { NextApiRequest, NextApiResponse } from 'next';
 
-import { NextApiRequest, NextApiResponse } from 'next';
-import axios from 'axios';
+export default async function handler(
+  req: NextApiRequest,
+  res: NextApiResponse
+) {
+  if (req.method !== 'POST') {
+    return res.status(405).json({ message: 'Method not allowed' });
+  }
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-    console.log('POST request received');
-  if (req.method === 'POST') {
-    console.log('post');
-    try {
-      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
-      console.log('Backend URL:', backendUrl); // Log the backend URL
-      const response = await axios.post(`${backendUrl}/api/login`, req.body);
-      res.status(200).json(response.data);
-    } catch (error: any) {
-        console.log('ck error');
-      res.status(error.response?.status || 500).json(error.response?.data || { message: 'An error occurred' });
+  const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
+  
+  if (!backendUrl) {
+    console.error('BACKEND_URL is not defined');
+    return res.status(500).json({ message: 'Server configuration error' });
+  }
+
+  try {
+    const response = await fetch(`${backendUrl}/api/login`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+      },
+      body: JSON.stringify(req.body),
+    });
+
+    const contentType = response.headers.get('content-type');
+    if (!contentType || !contentType.includes('application/json')) {
+      const text = await response.text();
+      throw new Error(`Expected JSON but got: ${text}`);
     }
-  } else {
-    res.status(405).json({ message: 'Method not allowed' });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      return res.status(response.status).json({
+        message: data.message || 'Login failed'
+      });
+    }
+
+    return res.status(response.status).json(data);
+    
+  } catch (error: any) {
+    console.error('Login error:', error);
+    return res.status(500).json({
+      message: error.message || 'Internal server error'
+    });
   }
 }
-
-

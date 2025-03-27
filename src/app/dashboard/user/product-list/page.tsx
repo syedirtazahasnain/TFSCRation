@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import Header from "../_components/Header";
+import Header from '@/app/_components/Header';
 
 interface CartItem {
   id?: number;
@@ -52,7 +52,7 @@ export default function ProductListPage() {
       setLoading(true);
       const token = localStorage.getItem("token");
       if (!token) {
-        router.push("/login");
+        router.push("/auth/login");
         return;
       }
 
@@ -86,7 +86,7 @@ export default function ProductListPage() {
     try {
       const token = localStorage.getItem("token");
       if (!token) {
-        router.push("/login");
+        router.push("/auth/login");
         return;
       }
 
@@ -130,7 +130,7 @@ export default function ProductListPage() {
     try {
       const token = localStorage.getItem("token");
       if (!token) {
-        router.push("/login");
+        router.push("/auth/login");
         return;
       }
   
@@ -258,7 +258,7 @@ export default function ProductListPage() {
     try {
       const token = localStorage.getItem("token");
       if (!token) {
-        router.push("/login");
+        router.push("/auth/login");
         return;
       }
 
@@ -289,7 +289,7 @@ export default function ProductListPage() {
     try {
       const token = localStorage.getItem("token");
       if (!token) {
-        router.push("/login");
+        router.push("/auth/login");
         return;
       }
 
@@ -321,7 +321,7 @@ export default function ProductListPage() {
     try {
       const token = localStorage.getItem("token");
       if (!token) {
-        router.push("/login");
+        router.push("/auth/login");
         return;
       }
 
@@ -341,7 +341,8 @@ export default function ProductListPage() {
         setCart([]); // Clear the cart after successful submission
         setLocalQuantities({}); // Clear local quantities
         setCartData(null); // Clear cart data
-        router.push(`/orders/${data.data.id}`);
+        // router.push(`/orders/${data.data.id}`);
+        router.push(`/dashboard/user/orders/${data.data.id}`); 
       } else {
         throw new Error(data.message || "Failed to place order");
       }

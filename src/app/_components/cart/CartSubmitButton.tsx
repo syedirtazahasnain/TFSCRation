@@ -21,7 +21,7 @@ export default function CartSubmitButton({ cart }: { cart: CartItem[] }) {
       
       const token = localStorage.getItem('token');
       if (!token) {
-        router.push('/login');
+        router.push('/auth/login');
         return;
       }
 

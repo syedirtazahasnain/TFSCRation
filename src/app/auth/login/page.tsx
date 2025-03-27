@@ -21,6 +21,7 @@ export default function LoginPage() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Accept': 'application/json',
         },
         body: JSON.stringify({ 
           email: email.trim(),
@@ -42,7 +43,15 @@ export default function LoginPage() {
 
       // Success case
       localStorage.setItem('token', data.data.token);
-      router.push('/product-list');
+      localStorage.setItem('user', JSON.stringify(data.data.user));
+      // router.push('/product-list');
+      localStorage.setItem('userRole',data.data.role);
+      if (data.data.role === 'admin' || data.data.role === 'superadmin') {
+        router.push('/dashboard/admin');
+      } else {
+        router.push('/dashboard/user/product-list');
+        // router.push('/user/dashboard');
+      }
     } catch (err) {
       setError('Network error. Please check your connection and try again.');
     } finally {

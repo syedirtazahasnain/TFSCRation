@@ -2,7 +2,7 @@
 
 import { useRouter, useParams } from 'next/navigation';
 import { useState, useEffect } from 'react';
-import Header from "../../_components/Header";
+import Header from '@/app/_components/Header';
 
 interface Order {
   id: number;
@@ -38,7 +38,7 @@ export default function OrderDetailsPage() {
       try {
         const token = localStorage.getItem('token');
         if (!token) {
-          router.push('/login');
+          router.push('/auth/login');
           return;
         }
 

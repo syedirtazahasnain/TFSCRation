@@ -1,14 +1,47 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import UserProfile from './user/UserProfile';
+import Link from 'next/link';
 
 export default function Header() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [showProfile, setShowProfile] = useState(false);
+  const [userRole, setUserRole] = useState<string | null>(null);
+  const [userData, setUserData] = useState<any>(null);
+
+  useEffect(() => {
+    const fetchUserData = async () => {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        router.push('/auth/login');
+        return;
+      }
+
+      try {
+        const response = await fetch('http://household.test/api/user-details', {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Accept': 'application/json',
+          }
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          setUserData(data.data);
+          setUserRole(data.data.my_role || data.data.role);
+          console.log('User role:', data.data.my_role || data.data.role);
+        }
+      } catch (err) {
+        console.error('Failed to fetch user data:', err);
+      }
+    };
+
+    fetchUserData();
+  }, [router]);
 
   const handleLogout = async () => {
     setIsLoading(true);
@@ -17,15 +50,15 @@ export default function Header() {
     try {
       const token = localStorage.getItem('token');
       if (!token) {
-        router.push('/login');
+        router.push('/auth/login');
         return;
       }
 
       const response = await fetch('http://household.test/api/logout', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+          'Authorization': `Bearer ${token}`,
+          'Accept': 'application/json',
         }
       });
 
@@ -35,12 +68,62 @@ export default function Header() {
       }
 
       localStorage.removeItem('token');
+      localStorage.removeItem('user');
       router.refresh();
-      router.push('/login');
+      router.push('/auth/login');
       
     } catch (err: any) {
       console.error('Logout error:', err);
       setError(err.message || 'Failed to logout. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const navigateToAdminRoute = (path: string) => {
+    if (!userRole) {
+      setError('User role not loaded yet');
+      return;
+    }
+
+    if (userRole === 'admin' || userRole === 'super_admin') {
+      router.push(`/dashboard/admin/${path}`);
+    } else {
+      setError('You do not have permission to access this page');
+    }
+  };
+  
+  const fetchAllOrders = async () => {
+    setIsLoading(true);
+    setError('');
+    
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        router.push('/auth/login');
+        return;
+      }
+  
+      const response = await fetch('http://household.test/api/admin/orders/all', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Accept': 'application/json',
+        }
+      });
+  
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to fetch orders');
+      }
+  
+      const data = await response.json();
+      console.log('All orders:', data);
+      // Here you can handle the orders data - perhaps navigate to a page that displays them
+      router.push(`/dashboard/admin/order`);
+      
+    } catch (err: any) {
+      console.error('Fetch orders error:', err);
+      setError(err.message || 'Failed to fetch orders. Please try again.');
     } finally {
       setIsLoading(false);
     }
@@ -56,18 +139,36 @@ export default function Header() {
         )}
         
         <button
-          onClick={() => router.push('/product-list')}
+          onClick={() => router.push('/dashboard/user/product-list')}
           className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg transition-all duration-200"
         >
           Home
         </button>
 
         <button
-          onClick={() => router.push('/orders')}
+          onClick={() => router.push('/dashboard/user/orders')}
           className="bg-gray-200 hover:bg-gray-300 text-gray-800 px-4 py-2 rounded-lg transition-all duration-200"
         >
           Orders
         </button>
+
+        {/* Admin-only buttons - conditionally rendered */}
+        {userRole && (userRole === 'admin' || userRole === 'super_admin') && (
+          <>
+            <button
+              onClick={fetchAllOrders}
+              className="bg-purple-500 hover:bg-purple-600 text-white px-4 py-2 rounded-lg transition-all duration-200"
+            >
+              All Orders
+            </button>
+            <button
+              onClick={() => navigateToAdminRoute('dashboard')}
+              className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg transition-all duration-200"
+            >
+              Admin Dashboard
+            </button>
+          </>
+        )}
         
         <button
           onClick={() => setShowProfile(!showProfile)}
@@ -99,10 +200,9 @@ export default function Header() {
         </button>
       </div>
 
-      {/* Profile Modal */}
-      {showProfile && (
-        <div className="absolute right-4 top-20 z-10">
-          <UserProfile />
+      {showProfile && userData && (
+        <div className="absolute right-4 top-20 z-10 bg-white p-4 rounded shadow-lg">
+          <UserProfile userData={userData} />
           <button
             onClick={() => setShowProfile(false)}
             className="mt-2 w-full bg-gray-200 hover:bg-gray-300 text-gray-800 py-1 rounded"

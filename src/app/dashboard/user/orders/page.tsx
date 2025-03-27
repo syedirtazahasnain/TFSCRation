@@ -5,7 +5,7 @@ import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Order } from "@/types";
-import Header from "../_components/Header";
+import Header from '@/app/_components/Header';
 
 
 interface PaginatedOrders {
@@ -34,7 +34,7 @@ export default function OrdersPage() {
       try {
         const token = localStorage.getItem('token');
         if (!token) {
-          router.push('/login');
+          router.push('/auth/login');
           return;
         }
 
@@ -82,9 +82,7 @@ export default function OrdersPage() {
                 </p>
                 <p className="text-lg font-bold">Total: ${order.grand_total}</p>
               </div>
-              <Link 
-                href={`/orders/${order.id}`}
-                className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600"
+              <Link href={`/dashboard/user/orders/${order.id}`} className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600"
               >
                 View Details
               </Link>
