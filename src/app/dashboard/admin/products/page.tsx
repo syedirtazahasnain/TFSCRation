@@ -98,7 +98,7 @@ export default function ProductsPage() {
               {product.image && (
                 <div className="mb-4 h-48 bg-gray-100 rounded-lg overflow-hidden">
                   <img 
-                    src={`http://household.test/storage/${product.image}`} 
+                    src={`http://household.test/storage/public/${product.image}`} 
                     alt={product.name}
                     className="w-full h-full object-contain"
                   />

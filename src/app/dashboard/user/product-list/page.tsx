@@ -388,6 +388,15 @@ export default function ProductListPage() {
                       key={product.id}
                       className="bg-white p-6 rounded-lg shadow-md"
                     >
+                      {product.image && (
+                        <div className="mb-4 h-48 bg-gray-100 rounded-lg overflow-hidden">
+                          <img 
+                            src={`http://household.test/storage/public/${product.image}`} 
+                            alt={product.name}
+                            className="w-full h-full object-contain"
+                          />
+                        </div>
+                      )}
                       <h2 className="text-xl font-semibold mb-2">
                         {product.name}
                       </h2>
