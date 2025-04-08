@@ -104,7 +104,7 @@ export default function OrdersPage() {
           return (
             <Link
               key={index}
-              href={`/orders?page=${page}`}
+              href={`/dashboard/user/orders?page=${page}`}
               className={`px-4 py-2 rounded-lg border ${
                 isActive
                   ? 'bg-blue-500 text-white border-blue-500'

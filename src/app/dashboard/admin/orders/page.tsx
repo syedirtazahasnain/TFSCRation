@@ -38,7 +38,7 @@ export default function OrdersPage() {
           return;
         }
 
-        const response = await fetch(`http://household.test/api/admin/orders/all?page=${currentPage}`, {
+        const response = await fetch(`http://household.test/api/orders?page=${currentPage}`, {
           headers: {
             Authorization: `Bearer ${token}`,
           },
@@ -82,13 +82,7 @@ export default function OrdersPage() {
                 </p>
                 <p className="text-lg font-bold">Total: ${order.grand_total}</p>
               </div>
-              <Link 
-                href={
-                  localStorage.getItem('userRole') === 'admin' 
-                    ? `/dashboard/admin/orders/${order.id}` 
-                    : `/dashboard/user/orders/${order.id}`
-                }
-                className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600"
+              <Link href={`/dashboard/user/orders/${order.id}`} className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600"
               >
                 View Details
               </Link>
@@ -110,7 +104,7 @@ export default function OrdersPage() {
           return (
             <Link
               key={index}
-              href={`/dashboard/admin/order?page=${page}`}
+              href={`/orders?page=${page}`}
               className={`px-4 py-2 rounded-lg border ${
                 isActive
                   ? 'bg-blue-500 text-white border-blue-500'

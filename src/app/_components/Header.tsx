@@ -33,7 +33,6 @@ export default function Header() {
           const data = await response.json();
           setUserData(data.data);
           setUserRole(data.data.my_role || data.data.role);
-          console.log('User role:', data.data.my_role || data.data.role);
         }
       } catch (err) {
         console.error('Failed to fetch user data:', err);
@@ -79,7 +78,7 @@ export default function Header() {
       setIsLoading(false);
     }
   };
-
+  
   const navigateToAdminRoute = (path: string) => {
     if (!userRole) {
       setError('User role not loaded yet');
@@ -92,7 +91,7 @@ export default function Header() {
       setError('You do not have permission to access this page');
     }
   };
-  
+
   const fetchAllOrders = async () => {
     setIsLoading(true);
     setError('');
@@ -117,8 +116,6 @@ export default function Header() {
       }
   
       const data = await response.json();
-      console.log('All orders:', data);
-      // Here you can handle the orders data - perhaps navigate to a page that displays them
       router.push(`/dashboard/admin/order`);
       
     } catch (err: any) {
@@ -138,21 +135,27 @@ export default function Header() {
           <p className="text-red-500 text-sm animate-fade-in">{error}</p>
         )}
         
-        <button
+       
+        
+        {userRole === 'user' && (
+          <>
+          <button
           onClick={() => router.push('/dashboard/user/product-list')}
           className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg transition-all duration-200"
         >
           Home
         </button>
-
-        <button
-          onClick={() => router.push('/dashboard/user/orders')}
-          className="bg-gray-200 hover:bg-gray-300 text-gray-800 px-4 py-2 rounded-lg transition-all duration-200"
-        >
-          Orders
-        </button>
-
-        {/* Admin-only buttons - conditionally rendered */}
+          <button
+            onClick={() => router.push('/dashboard/user/orders')}
+            className="bg-gray-200 hover:bg-gray-300 text-gray-800 px-4 py-2 rounded-lg transition-all duration-200"
+          >
+            Orders
+          </button>
+          
+          </>
+        )}
+        
+        {/* Admin-only buttons */}
         {userRole && (userRole === 'admin' || userRole === 'super_admin') && (
           <>
             <button
@@ -161,8 +164,22 @@ export default function Header() {
             >
               All Orders
             </button>
+            
             <button
-              onClick={() => navigateToAdminRoute('dashboard')}
+              onClick={() => router.push('/dashboard/admin/products/add')}
+              className="bg-indigo-500 hover:bg-indigo-600 text-white px-4 py-2 rounded-lg transition-all duration-200"
+            >
+              Create Product
+            </button>
+            <button
+              onClick={() => router.push('/dashboard/admin/products')}
+              className="bg-indigo-500 hover:bg-indigo-600 text-white px-4 py-2 rounded-lg transition-all duration-200"
+            >
+              Products
+            </button>
+            
+            <button
+              onClick={() => router.push('/dashboard/admin')}
               className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg transition-all duration-200"
             >
               Admin Dashboard

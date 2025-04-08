@@ -5,8 +5,3 @@ export default async function ProductDetails({params,}:{params : Promise <{produ
     return <h2>Product Details of product {product_id} is showing</h2>
 }
 
-
-
-// export default function ProductDetails2({params}){
-    
-// }
