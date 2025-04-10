@@ -43,7 +43,7 @@ export default function OrderDetailsPage() {
         }
 
         const response = await fetch(
-          `http://household.test/api/admin/orders/${orderId}`,
+          `http://127.0.0.1:8000/api/admin/orders/${orderId}`,
           {
             headers: {
               Authorization: `Bearer ${token}`,

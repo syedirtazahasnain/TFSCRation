@@ -53,7 +53,7 @@ function PasswordUpdateForm() {
         return;
       }
 
-      const response = await fetch('http://household.test/api/password-update', {
+      const response = await fetch('http://127.0.0.1:8000/api/password-update', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -201,7 +201,7 @@ function PasswordUpdateForm() {
           return;
         }
 
-        const response = await fetch('http://household.test/api/user-details', {
+        const response = await fetch('http://127.0.0.1:8000/api/user-details', {
           headers: {
             Authorization: `Bearer ${token}`,
             'Accept': 'application/json',

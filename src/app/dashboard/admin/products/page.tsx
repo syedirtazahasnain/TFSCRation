@@ -51,7 +51,7 @@ export default function ProductsPage() {
           return;
         }
 
-        const response = await fetch(`http://household.test/api/admin/products?page=${currentPage}`, {
+        const response = await fetch(`http://127.0.0.1:8000/api/admin/products?page=${currentPage}`, {
           headers: {
             Authorization: `Bearer ${token}`,
           },
@@ -96,9 +96,9 @@ export default function ProductsPage() {
           <div key={product.id} className="bg-white p-4 rounded-lg shadow-md">
             <div className="flex flex-col h-full">
               {product.image && (
-                <div className="mb-4 h-48 bg-gray-100 rounded-lg overflow-hidden">
+                <div className="mb-4 h-48 bg-[#f9f9f9] rounded-lg overflow-hidden">
                   <img 
-                    src={`http://household.test/storage/public/${product.image}`} 
+                    src={`http://127.0.0.1:8000/storage/public/${product.image}`} 
                     alt={product.name}
                     className="w-full h-full object-contain"
                   />

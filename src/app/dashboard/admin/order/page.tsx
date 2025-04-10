@@ -38,7 +38,7 @@ export default function OrdersPage() {
           return;
         }
 
-        const response = await fetch(`http://household.test/api/admin/orders/all?page=${currentPage}`, {
+        const response = await fetch(`http://127.0.0.1:8000/api/admin/orders/all?page=${currentPage}`, {
           headers: {
             Authorization: `Bearer ${token}`,
           },

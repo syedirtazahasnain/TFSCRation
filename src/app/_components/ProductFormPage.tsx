@@ -37,7 +37,7 @@ export default function ProductFormPage({ productId }: ProductFormProps) {
       try {
         const token = localStorage.getItem('token');
         const response = await fetch(
-          `http://household.test/api/admin/products/${productId}`,
+          `http://127.0.0.1:8000/api/admin/products/${productId}`,
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -50,7 +50,7 @@ export default function ProductFormPage({ productId }: ProductFormProps) {
         const data = await response.json();
         setProduct(data.data);
         if (data.data.image) {
-          setImagePreview(`http://household.test/storage/${data.data.image}`);
+          setImagePreview(`http://127.0.0.1:8000/storage/${data.data.image}`);
         }
       } catch (error) {
         toast.error(error instanceof Error ? error.message : 'Failed to load product');
@@ -102,7 +102,7 @@ export default function ProductFormPage({ productId }: ProductFormProps) {
       }
 
       const response = await fetch(
-        'http://household.test/api/admin/store-products',
+        'http://127.0.0.1:8000/api/admin/store-products',
         {
           method: 'POST',
           headers: {
@@ -197,7 +197,7 @@ export default function ProductFormPage({ productId }: ProductFormProps) {
         <button
           type="button"
           onClick={() => router.push('/dashboard/admin/products')}
-          className="px-4 py-2 border rounded-md bg-gray-100 hover:bg-gray-200"
+          className="px-4 py-2 border rounded-md bg-[#f9f9f9] hover:bg-gray-200"
         >
           Cancel
         </button>

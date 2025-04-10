@@ -4,7 +4,7 @@ import axios from 'axios';
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method === 'POST') {
     try {
-      const response = await axios.post('http://household.test/api/register', req.body);
+      const response = await axios.post('http://127.0.0.1:8000/api/register', req.body);
       res.status(200).json(response.data);
     } catch (error: any) {
       res.status(error.response?.status || 500).json(error.response?.data || { message: 'An error occurred' });
