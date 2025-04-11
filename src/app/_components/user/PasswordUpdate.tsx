@@ -43,7 +43,7 @@ export default function PasswordUpdateForm() {
         return;
       }
 
-      const response = await fetch('http://household.test/api/password-update', {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/password-update`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

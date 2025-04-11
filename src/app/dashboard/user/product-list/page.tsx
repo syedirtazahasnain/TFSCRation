@@ -2,7 +2,10 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import Header from '@/app/_components/Header';
+import Sidebar from "@/app/_components/sidebar/index";
+import Breadcrumb from "@/app/_components/ui/Breadcrumb";
+import "@/app/extra.css";
+import { AddShoppingCart, Delete, HighlightOff, Close, ArrowForwardIos } from "@mui/icons-material";
 
 interface CartItem {
   id?: number;
@@ -43,7 +46,9 @@ export default function ProductListPage() {
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [totalPages, setTotalPages] = useState<number>(1);
   const [apiResponse, setApiResponse] = useState<string>("");
-  const [localQuantities, setLocalQuantities] = useState<{[key: number]: number}>({});
+  const [localQuantities, setLocalQuantities] = useState<{
+    [key: number]: number;
+  }>({});
   const router = useRouter();
 
   // Fetch products from the backend
@@ -57,7 +62,7 @@ export default function ProductListPage() {
       }
 
       const response = await fetch(
-        `http://household.test/api/products?page=${page}`,
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/products?page=${page}`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -90,7 +95,7 @@ export default function ProductListPage() {
         return;
       }
 
-      const response = await fetch("http://household.test/api/cart", {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/cart`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -109,12 +114,12 @@ export default function ProductListPage() {
           quantity: parseInt(item.quantity),
           unit_price: parseFloat(item.unit_price),
           total: parseFloat(item.total),
-          product: item.product
+          product: item.product,
         }));
         setCart(cartItems);
-        
+
         // Initialize local quantities
-        const quantities: {[key: number]: number} = {};
+        const quantities: { [key: number]: number } = {};
         cartItems.forEach((item: CartItem) => {
           quantities[item.product_id] = item.quantity;
         });
@@ -133,59 +138,60 @@ export default function ProductListPage() {
         router.push("/auth/login");
         return;
       }
-  
-      const response = await fetch("http://household.test/api/cart/add", {
+
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/cart/add`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ 
-          products: cartItems.map(item => ({
+        body: JSON.stringify({
+          products: cartItems.map((item) => ({
             product_id: item.product_id,
-            quantity: item.quantity
-          }))
+            quantity: item.quantity,
+          })),
         }),
       });
-  
+
       const data = await response.json();
-  
+
       if (!response.ok) {
         throw new Error(data.message || "Failed to sync cart with backend");
       }
-  
+
       // Update cart with backend response
       if (data.data && data.data.cart_data) {
         // The response structure is different for add/update vs get cart
         // For add/update, cart_data is an array, not an object with items
-        const updatedCart = Array.isArray(data.data.cart_data) 
+        const updatedCart = Array.isArray(data.data.cart_data)
           ? data.data.cart_data.map((item: any) => ({
-              id: item.id,
-              product_id: item.product_id,
-              quantity: parseInt(item.quantity),
-              unit_price: parseFloat(item.unit_price),
-              total: parseFloat(item.total),
-              // Product info might not be included in the response
-              product: allProducts.find(p => p.id === item.product_id) || undefined
-            }))
+            id: item.id,
+            product_id: item.product_id,
+            quantity: parseInt(item.quantity),
+            unit_price: parseFloat(item.unit_price),
+            total: parseFloat(item.total),
+            // Product info might not be included in the response
+            product:
+              allProducts.find((p) => p.id === item.product_id) || undefined,
+          }))
           : data.data.cart_data.items.map((item: any) => ({
-              id: item.id,
-              product_id: item.product_id,
-              quantity: parseInt(item.quantity),
-              unit_price: parseFloat(item.unit_price),
-              total: parseFloat(item.total),
-              product: item.product
-            }));
-  
+            id: item.id,
+            product_id: item.product_id,
+            quantity: parseInt(item.quantity),
+            unit_price: parseFloat(item.unit_price),
+            total: parseFloat(item.total),
+            product: item.product,
+          }));
+
         setCart(updatedCart);
-        
+
         // Update local quantities
-        const quantities: {[key: number]: number} = {};
+        const quantities: { [key: number]: number } = {};
         updatedCart.forEach((item: CartItem) => {
           quantities[item.product_id] = item.quantity;
         });
         setLocalQuantities(quantities);
-  
+
         // If we have the full cart data (from get cart), set it
         if (data.data.cart_data.payable_amount !== undefined) {
           setCartData(data.data.cart_data);
@@ -205,12 +211,12 @@ export default function ProductListPage() {
       quantity: parseInt(item.quantity),
       unit_price: parseFloat(item.unit_price),
       total: parseFloat(item.total),
-      product: item.product
+      product: item.product,
     }));
     setCart(cartItems);
-    
+
     // Update local quantities
-    const quantities: {[key: number]: number} = {};
+    const quantities: { [key: number]: number } = {};
     cartItems.forEach((item: CartItem) => {
       quantities[item.product_id] = item.quantity;
     });
@@ -223,12 +229,12 @@ export default function ProductListPage() {
       alert("Quantity must be greater than 0.");
       return;
     }
-  
+
     // Use the current local quantity if available
     const finalQuantity = localQuantities[productId] || quantity;
-  
+
     const existingProduct = cart.find((item) => item.product_id === productId);
-  
+
     let updatedCart;
     if (existingProduct) {
       // Update quantity if product already exists in cart
@@ -239,17 +245,20 @@ export default function ProductListPage() {
       );
     } else {
       // Add new product to cart
-      updatedCart = [...cart, { product_id: productId, quantity: finalQuantity }];
+      updatedCart = [
+        ...cart,
+        { product_id: productId, quantity: finalQuantity },
+      ];
     }
-  
+
     await syncCartWithBackend(updatedCart);
   };
 
   // Update local quantity state
   const updateLocalQuantity = (productId: number, value: number) => {
-    setLocalQuantities(prev => ({
+    setLocalQuantities((prev) => ({
       ...prev,
-      [productId]: value
+      [productId]: value,
     }));
   };
 
@@ -262,12 +271,15 @@ export default function ProductListPage() {
         return;
       }
 
-      const response = await fetch(`http://household.test/api/cart/remove/${itemId}`, {
-        method: "DELETE",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/cart/remove/${itemId}`,
+        {
+          method: "DELETE",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
 
       const data = await response.json();
 
@@ -293,7 +305,7 @@ export default function ProductListPage() {
         return;
       }
 
-      const response = await fetch("http://household.test/api/cart/clear", {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/cart/clear`, {
         method: "DELETE",
         headers: {
           Authorization: `Bearer ${token}`,
@@ -325,7 +337,7 @@ export default function ProductListPage() {
         return;
       }
 
-      const response = await fetch("http://household.test/api/orders/place", {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/orders/place`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -342,7 +354,7 @@ export default function ProductListPage() {
         setLocalQuantities({}); // Clear local quantities
         setCartData(null); // Clear cart data
         // router.push(`/orders/${data.data.id}`);
-        router.push(`/dashboard/user/orders/${data.data.id}`); 
+        router.push(`/dashboard/user/orders/${data.data.id}`);
       } else {
         throw new Error(data.message || "Failed to place order");
       }
@@ -358,164 +370,327 @@ export default function ProductListPage() {
   }, [currentPage]);
 
   // Calculate total price and quantity
-  const totalPrice = cartData?.payable_amount || cart.reduce(
-    (total, item) => total + (item.total || 0),
-    0
-  );
+  const totalPrice =
+    cartData?.payable_amount ||
+    cart.reduce((total, item) => total + (item.total || 0), 0);
   const totalQuantity = cart.reduce((total, item) => total + item.quantity, 0);
 
   return (
-    <div className="min-h-screen bg-gray-100">
-      <Header />
-      <div className="min-h-screen bg-gray-100 p-6">
-        <h1 className="text-2xl font-bold mb-6">Product List</h1>
+    <div className="min-h-screen flex gap-[20px] px-[20px] xl:px-[30px]">
+      <div className="w-[15%] relative">
+        <Sidebar />
+      </div>
+      <div className="w-full mx-auto space-y-4 p-4">
+        <div className="px-6 py-6 bg-[#2b3990] rounded-[20px] xl:rounded-[25px] text-[#fff] relative">
+          <h1 className="text-2xl font-bold my-0">Order Products</h1>
+          <Breadcrumb
+            items={[{ label: "Dashboard" }, { label: "Product List" }]}
+          />
+
+          <div
+            className="absolute top-[10px] right-[10px] z-40 bg-[#fff] p-[10px] rounded-[15px] cursor-pointer"
+            onClick={() => setIsCartOpen(!isCartOpen)}
+          >
+            {isCartOpen ? (
+              <AddShoppingCart />
+            ) : (
+              <div className="flex items-center gap-1 relative">
+                <AddShoppingCart className="text-[#000]" />
+                <div className="absolute top-[-12px] left-[-12px] w-[18px] h-[18px] bg-[#c00] rounded-full flex items-center justify-center">
+                  <p className="text-xs my-0 text-[#fff]">{totalQuantity}</p>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
         {error && <p className="text-red-500 mb-4">{error}</p>}
         {apiResponse && <p className="text-green-500 mb-4">{apiResponse}</p>}
         {loading ? (
           <p>Loading...</p>
         ) : (
           <>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {Array.isArray(products) &&
-                products.map((product) => {
-                  const cartItem = cart.find(
-                    (item) => item.product_id === product.id
-                  );
-                  const quantity = localQuantities[product.id] || 1;
+            <div className="grid grid-cols-1 lg:grid-cols-7 gap-[10px] xl:gap-[15px] relative h-[75vh] overflow-hidden">
 
-                  return (
-                    <div
-                      key={product.id}
-                      className="bg-white p-6 rounded-lg shadow-md"
-                    >
-                      {product.image && (
-                        <div className="mb-4 h-48 bg-gray-100 rounded-lg overflow-hidden">
-                          <img 
-                            src={`http://household.test/storage/public/${product.image}`} 
-                            alt={product.name}
-                            className="w-full h-full object-contain"
-                          />
-                        </div>
-                      )}
-                      <h2 className="text-xl font-semibold mb-2">
-                        {product.name}
-                      </h2>
-                      <p className="text-gray-600 mb-4">{product.detail}</p>
-                      <p className="text-lg font-bold">${product.price}</p>
-                      <div className="flex items-center mt-4">
-                        <input
-                          type="number"
-                          min="1"
-                          value={quantity}
-                          onChange={(e) => {
-                            const value = parseInt(e.target.value);
-                            if (!isNaN(value) && value > 0) {
-                              updateLocalQuantity(product.id, value);
-                            }
-                          }}
-                          className="w-16 px-2 py-1 border rounded-lg mr-2"
-                        />
-                        <button
-                          onClick={() => addToCart(product.id, quantity)}
-                          className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600"
+              <div className="lg:col-span-5 overflow-y-auto rashnItems">
+                <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-[10px] xl:gap-[15px]">
+                  {Array.isArray(products) &&
+                    products.map((product) => {
+                      const cartItem = cart.find(
+                        (item) => item.product_id === product.id
+                      );
+                      const quantity = localQuantities[product.id] || 1;
+
+                      return (
+                        <div
+                          key={product.id}
+                          className="bg-white rounded-[20px] overflow-hidden border-[1px] border-[#2b3990] border-opacity-40"
                         >
-                          {cartItem ? "Update Cart" : "Add to Cart"}
+                          <div className="bg-[#f9f9f9] rounded-t-lg overflow-hidden h-[150px] w-full">
+                            <img
+                              src={product.image ? `${process.env.NEXT_PUBLIC_BACKEND_URL_PUBLIC}${product.image}` : "/images/items/atta.webp"} 
+                              alt=""
+                              className="w-full h-full object-cover"
+                              onError={(e) => {
+                                e.currentTarget.src = "/images/items/atta.webp";
+                              }}
+                            />
+                          </div>
+                          <div className="py-2 px-3">
+                            <div className="flex items-center justify-between">
+                              <h2 className="text-xl font-semibold my-0 capitalize">
+                                {product.name}
+                              </h2>
+                              <p className="my-0 text-xs">Flour</p>
+                            </div>
+                            <div className="flex items-center justify-end">
+                              <p className="my-0 text-sm font-semibold">1 kg</p>
+                            </div>
+                            <p className="text-xl font-semibold">
+                              {product.price}{" "}
+                              <span className="pl-[2px] text-sm font-normal">
+                                Rs
+                              </span>
+                            </p>
+                            <div className="grid grid-cols-2 gap-[5px] mt-4">
+                              <div className="flex items-center justify-center w-[90px] h-8 px-1 relative">
+                                <button
+                                  onClick={() =>
+                                    quantity > 1 &&
+                                    updateLocalQuantity(product.id, quantity - 1)
+                                  }
+                                  className="flex items-center justify-center text-[12px] absolute top-1/2 -translate-y-1/2 left-[0px] w-[18px] h-[18px] rounded-md bg-[#000] text-white hover:bg-[#00aeef] duration-200 transition-all ease-in-out"
+                                >
+                                  -
+                                </button>
+
+                                <input
+                                  type="number"
+                                  min="1"
+                                  value={quantity}
+                                  onChange={(e) => {
+                                    const value = parseInt(e.target.value);
+                                    if (!isNaN(value) && value > 0) {
+                                      updateLocalQuantity(product.id, value);
+                                    }
+                                  }}
+                                  className="w-14 ml-[5px] text-center text-xl outline-none border-none bg-transparent"
+                                />
+
+                                <button
+                                  onClick={() =>
+                                    updateLocalQuantity(product.id, quantity + 1)
+                                  }
+                                  className="flex items-center justify-center text-[12px] absolute top-1/2 -translate-y-1/2 right-[10px] w-[18px] h-[18px] rounded-md bg-[#000] text-white hover:bg-[#00aeef] duration-200 transition-all ease-in-out"
+                                >
+                                  +
+                                </button>
+                              </div>
+
+                              <div className="flex justify-end">
+                                <button
+                                  onClick={() => addToCart(product.id, quantity)}
+                                  className="bg-blue-400 text-white px-3 py-1 rounded-xl hover:bg-blue-700"
+                                >
+                                  <AddShoppingCart className="w-3 h-3" />
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                </div>
+                {/* Pagination */}
+                <div className="flex justify-center mt-8">
+                  {Array.from({ length: totalPages }, (_, index) => (
+                    <button
+                      key={index + 1}
+                      onClick={() => setCurrentPage(index + 1)}
+                      className={`mx-1 px-4 py-2 rounded ${currentPage === index + 1
+                        ? "bg-blue-500 text-white"
+                        : "bg-white text-blue-500 border border-blue-500"
+                        }`}
+                    >
+                      {index + 1}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="bg-gray-200 rounded-[15px] px-6 py-0 relative lg:col-span-2 overflow-y-auto rashnItems">
+                <div>
+                  <div className="flex justify-between items-center mt-4">
+                    <h2 className="text-xl font-bold my-0">Cart Items</h2>
+                    <Delete
+                      onClick={clearCart} className="text-[#c00] cursor-pointer w-3 h-3" />
+                  </div>
+                  {cart.length === 0 ? (
+                    <p>Your cart is empty.</p>
+                  ) : (
+                    <>
+                      <div className="flex justify-end my-2">
+                        <div className="text-right">
+                          <p className="font-semibold text-xl"><span className="text-sm font-normal pr-[10px]">Total Price </span> {totalPrice.toFixed(0)} <span className="text-xs pl-[2px]">Rs </span>
+                          </p>
+                          <div className="flex justify-end">
+                            <p className="font-semibold text-xs uppercase py-[1px] px-[10px] rounded-[5px] text-[#fff] bg-[#2b3990]">Items: {totalQuantity}</p>
+                          </div>
+                        </div>
+                      </div>
+
+                      <ul className="overflow-y-auto">
+                        {cart.map((item) => {
+                          console.log("Cart Item:", item);
+                          const product =
+                            item.product ||
+                            allProducts.find((p) => p.id === item.product_id);
+                          return (
+                            <li key={item.id || item.product_id} className="mb-2 p-[10px] rounded-[15px] bg-[#fff] relative w-full flex items-center gap-[10px]">
+                              <div className="">
+                                <div className="w-[50px] rounded-lg h-full overflow-hidden"><img
+                                  src={
+                                    item.product?.image 
+                                      ? `${process.env.NEXT_PUBLIC_BACKEND_URL_PUBLIC}${item.product.image}` 
+                                      : "/images/items/atta.webp"
+                                  } 
+                                  alt={item.product?.name || "Product image"}
+                                  className="w-full h-full object-cover"
+                                  onError={(e) => {
+                                    e.currentTarget.src = "/images/items/atta.webp";
+                                  }}
+                                />
+                                </div>
+                              </div>
+                              <div className="w-full">
+                                <div>
+                                  <h3 className="font-semibold capitalize">{product?.name} <span className="text-sm font-normal pl-[15px] lowercase">x {item.quantity}</span></h3>
+                                  <div className="pt-[4px] flex justify-between items-center">
+                                    <p className="font-semibold">
+                                      {item.total}
+                                      <span className="pl-[4px] text-xs font-normal">
+                                        Rs
+                                      </span>
+                                    </p>
+                                    <p className="my-0 text-sm px-[10px] bg-[#2b3990] rounded-[5px] text-[#fff]">
+                                      {item.unit_price} <span className="text-xs pl-[3px] font-semibold">Per - {item.product?.measure ?? "Unit"}</span>
+                                    </p>
+                                  </div>
+                                </div>
+                                <button
+                                  onClick={() => removeFromCart(item.id!)}
+                                  className="text-[#c00] hover:text-[#000] absolute top-[5px] right-[5px] cursor-pointer duration-200 ease-in-out transition-all w-[18px] h-[18px] flex items-center justify-center overflow-hidden"
+                                >
+                                  <Close className="p-1" />
+                                </button>
+                              </div>
+                            </li>
+                          );
+                        })}
+                      </ul>
+                      <div className="flex justify-end mb-4">
+                        <button
+                          onClick={submitCart}
+                          className="bg-green-400 text-white px-8 py-2 rounded-[10px] hover:bg-green-700 text-sm uppercase font-semibold"
+                        >
+                          Submit
                         </button>
                       </div>
-                    </div>
-                  );
-                })}
+                    </>
+                  )}
+                </div>
+              </div>
             </div>
 
-            {/* Pagination */}
-            <div className="flex justify-center mt-8">
-              {Array.from({ length: totalPages }, (_, index) => (
-                <button
-                  key={index + 1}
-                  onClick={() => setCurrentPage(index + 1)}
-                  className={`mx-1 px-4 py-2 rounded ${
-                    currentPage === index + 1
-                      ? "bg-blue-500 text-white"
-                      : "bg-white text-blue-500 border border-blue-500"
-                  }`}
-                >
-                  {index + 1}
-                </button>
-              ))}
+          </>
+        )}
+      </div>
+
+      {/* Cart */}
+      <div
+        className={`w-[30%] xl:w-[25%] 2xl:w-[20%] h-screen z-50 fixed top-0 right-0 bg-gray-200 p-6 overflow-y-auto transition-transform duration-300 ${isCartOpen ? "translate-x-0" : "translate-x-[120%]"
+          }`}
+      >
+        {/* Absolute Close */}
+        <div className="absolute top-[5px] left-0 w-[30px] h-[30px] bg-[#2b3990] flex items-center justify-center cursor-pointer duration-300 ease-in-out transition-all hover:bg-[#00aeef] rounded-r-[10px]">
+          <ArrowForwardIos
+            className="text-[#fff] p-[3px] my-0"
+            onClick={() => setIsCartOpen(!isCartOpen)}
+          />
+        </div>
+
+        <h2 className="text-xl font-bold my-4">Cart Items</h2>
+        {cart.length === 0 ? (
+          <p>Your cart is empty.</p>
+        ) : (
+          <>
+            <div className="flex justify-end my-2">
+              <div className="text-right">
+                <p className="font-semibold text-xl"><span className="text-sm font-normal pr-[10px]">Total Price </span> {totalPrice.toFixed(0)} <span className="text-xs pl-[2px]">Rs </span>
+                </p>
+                <div className="flex justify-end">
+                  <p className="font-semibold text-xs uppercase py-[1px] px-[10px] rounded-[5px] text-[#fff] bg-[#2b3990]">Items: {totalQuantity}</p>
+                </div>
+              </div>
+            </div>
+
+            <ul className="overflow-y-auto">
+              {cart.map((item) => {
+                const product =
+                  item.product ||
+                  allProducts.find((p) => p.id === item.product_id);
+                return (
+                  <li key={item.id || item.product_id} className="mb-2 p-[10px] rounded-[15px] bg-[#fff] relative w-full flex items-center gap-[10px]">
+                    <div className="">
+                      <div className="w-[50px] rounded-lg h-full overflow-hidden"><img
+                       src={
+                        item.product?.image 
+                          ? `${process.env.NEXT_PUBLIC_BACKEND_URL_PUBLIC}${item.product.image}` 
+                          : "/images/items/atta.webp"
+                      } 
+                      alt={item.product?.name || "Product image"}
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        e.currentTarget.src = "/images/items/atta.webp";
+                      }}
+                      />
+                      </div>
+                    </div>
+                    <div className="w-full">
+                      <div>
+                        <h3 className="font-semibold capitalize">{product?.name} <span className="text-sm font-normal pl-[15px] lowercase">x {item.quantity}</span></h3>
+                        <div className="pt-[4px] flex justify-between items-center">
+                          <p className="font-semibold">
+                            {item.total}
+                            <span className="pl-[4px] text-xs font-normal">
+                              Rs
+                            </span>
+                          </p>
+                          <p className="my-0 text-sm px-[10px] bg-[#2b3990] rounded-[5px] text-[#fff]">
+                            {item.unit_price} <span className="text-xs pl-[3px] font-semibold">Per - {item.product?.measure ?? "Unit"}</span>
+                          </p>
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => removeFromCart(item.id!)}
+                        className="text-[#c00] hover:text-[#000] absolute top-[5px] right-[5px] cursor-pointer duration-200 ease-in-out transition-all w-[18px] h-[18px] flex items-center justify-center overflow-hidden"
+                      >
+                        <Close className="p-1" />
+                      </button>
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+            <div className="flex justify-end mb-4">
+              <button
+                onClick={submitCart}
+                className="bg-green-400 text-white px-8 py-2 rounded-[10px] hover:bg-green-700 text-sm uppercase font-semibold"
+              >
+                Submit
+              </button>
             </div>
           </>
         )}
-
-        {/* Cart */}
-        <div
-          className={`fixed bottom-4 right-4 bg-white p-6 rounded-lg shadow-lg ${
-            isCartOpen ? "w-96" : "w-24"
-          } transition-all duration-300`}
-        >
-          <button
-            onClick={() => setIsCartOpen(!isCartOpen)}
-            className="absolute top-2 right-2 text-gray-600 hover:text-gray-900"
-          >
-            {isCartOpen ? "✕" : `🛒 ${totalQuantity}`}
-          </button>
-          {isCartOpen && (
-            <>
-              <h2 className="text-xl font-bold mb-4">Cart</h2>
-              {cart.length === 0 ? (
-                <p>Your cart is empty.</p>
-              ) : (
-                <>
-                  <ul className="max-h-64 overflow-y-auto">
-                    {cart.map((item) => {
-                      const product = item.product || allProducts.find(
-                        (p) => p.id === item.product_id
-                      );
-                      return (
-                        <li key={item.id || item.product_id} className="mb-4">
-                          <div className="flex justify-between items-center">
-                            <div>
-                              <h3 className="font-semibold">{product?.name}</h3>
-                              <p>Quantity: {item.quantity}</p>
-                              <p>
-                                Price: ${item.unit_price?.toFixed(2)} × {item.quantity} = ${item.total?.toFixed(2)}
-                              </p>
-                            </div>
-                            <button
-                              onClick={() => removeFromCart(item.id!)}
-                              className="text-red-500 hover:text-red-700"
-                            >
-                              Remove
-                            </button>
-                          </div>
-                        </li>
-                      );
-                    })}
-                  </ul>
-                  <div className="mt-4">
-                    <p className="font-bold">Total Quantity: {totalQuantity}</p>
-                    <p className="font-bold">
-                      Total Price: ${totalPrice.toFixed(2)}
-                    </p>
-                  </div>
-                  <div className="flex space-x-2 mt-4">
-                    <button
-                      onClick={clearCart}
-                      className="flex-1 bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600"
-                    >
-                      Clear Cart
-                    </button>
-                    <button
-                      onClick={submitCart}
-                      className="flex-1 bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600"
-                    >
-                      Submit Cart
-                    </button>
-                  </div>
-                </>
-              )}
-            </>
-          )}
-        </div>
       </div>
     </div>
   );

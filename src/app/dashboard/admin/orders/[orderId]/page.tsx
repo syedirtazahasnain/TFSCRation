@@ -43,7 +43,7 @@ export default function OrderDetailsPage() {
         }
 
         const response = await fetch(
-          `http://household.test/api/admin/orders/${orderId}`,
+          `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/admin/orders/${orderId}`,
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -86,7 +86,7 @@ export default function OrderDetailsPage() {
           </div>
           <div className="flex justify-between mb-2">
             <span className="font-semibold">Date:</span>
-            <span>{new Date(order.created_at).toLocaleDateString()}</span>
+            <span>{order.created_at}</span>
           </div>
           <div className="flex justify-between mb-2">
             <span className="font-semibold">Total:</span>

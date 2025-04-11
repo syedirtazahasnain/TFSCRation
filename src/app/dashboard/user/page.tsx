@@ -5,7 +5,6 @@ export default function UserDashboard() {
       { id: '#1002', date: '2023-05-10', status: 'Shipped', total: '$89.99' },
       { id: '#1003', date: '2023-05-05', status: 'Processing', total: '$45.50' },
     ];
-  
     return (
       <div className="space-y-6">
         <h1 className="text-3xl font-bold">My Dashboard</h1>

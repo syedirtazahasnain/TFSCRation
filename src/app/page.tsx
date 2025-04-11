@@ -9,7 +9,7 @@ export default function Home() {
       
       <Link 
         href="/auth/login" 
-        className="px-6 py-3 bg-white text-blue-600 rounded-lg font-medium hover:bg-gray-100 transition-colors"
+        className="px-6 py-3 bg-white text-blue-600 rounded-lg font-medium hover:bg-[#f9f9f9] transition-colors"
       >
         Login
       </Link>

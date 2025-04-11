@@ -51,7 +51,7 @@ export default function ProductsPage() {
           return;
         }
 
-        const response = await fetch(`http://household.test/api/admin/products?page=${currentPage}`, {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/admin/products?page=${currentPage}`, {
           headers: {
             Authorization: `Bearer ${token}`,
           },
@@ -96,11 +96,14 @@ export default function ProductsPage() {
           <div key={product.id} className="bg-white p-4 rounded-lg shadow-md">
             <div className="flex flex-col h-full">
               {product.image && (
-                <div className="mb-4 h-48 bg-gray-100 rounded-lg overflow-hidden">
+                <div className="mb-4 h-48 bg-[#f9f9f9] rounded-lg overflow-hidden">
                   <img 
-                    src={`http://household.test/storage/public/${product.image}`} 
+                    src={`${process.env.NEXT_PUBLIC_BACKEND_URL_PUBLIC}${product.image}`} 
                     alt={product.name}
                     className="w-full h-full object-contain"
+                    onError={(e) => {
+                      e.currentTarget.src = "/images/items/atta.webp";
+                    }}
                   />
                 </div>
               )}

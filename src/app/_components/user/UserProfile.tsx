@@ -53,7 +53,7 @@ function PasswordUpdateForm() {
         return;
       }
 
-      const response = await fetch('http://household.test/api/password-update', {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/password-update`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -201,7 +201,7 @@ function PasswordUpdateForm() {
           return;
         }
 
-        const response = await fetch('http://household.test/api/user-details', {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/user-details`, {
           headers: {
             Authorization: `Bearer ${token}`,
             'Accept': 'application/json',
@@ -266,13 +266,13 @@ function PasswordUpdateForm() {
           <div className="flex justify-between border-b pb-2">
             <span className="text-gray-600">Member since:</span>
             <span className="font-medium">
-              {new Date(user.created_at).toLocaleDateString()}
+              {user.created_at}
             </span>
           </div>
           <div className="flex justify-between">
             <span className="text-gray-600">Last updated:</span>
             <span className="font-medium">
-              {new Date(user.updated_at).toLocaleDateString()}
+              {user.updated_at}
             </span>
           </div>
         </div>
