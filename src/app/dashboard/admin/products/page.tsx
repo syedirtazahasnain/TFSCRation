@@ -51,7 +51,7 @@ export default function ProductsPage() {
           return;
         }
 
-        const response = await fetch(`http://127.0.0.1:8000/api/admin/products?page=${currentPage}`, {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/admin/products?page=${currentPage}`, {
           headers: {
             Authorization: `Bearer ${token}`,
           },
@@ -98,9 +98,12 @@ export default function ProductsPage() {
               {product.image && (
                 <div className="mb-4 h-48 bg-[#f9f9f9] rounded-lg overflow-hidden">
                   <img 
-                    src={`http://127.0.0.1:8000/storage/public/${product.image}`} 
+                    src={`${process.env.NEXT_PUBLIC_BACKEND_URL_PUBLIC}${product.image}`} 
                     alt={product.name}
                     className="w-full h-full object-contain"
+                    onError={(e) => {
+                      e.currentTarget.src = "/images/items/atta.webp";
+                    }}
                   />
                 </div>
               )}

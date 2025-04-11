@@ -45,7 +45,7 @@ export default function OrderDetailsPage() {
         }
 
         const response = await fetch(
-          `http://127.0.0.1:8000/api/orders/${orderId}`,
+          `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/orders/${orderId}`,
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -103,11 +103,7 @@ export default function OrderDetailsPage() {
               <p className="rounded-full px-3 py-0.5 text-xs capitalize">
                 <span className="pr-[10px]">Order Date:</span>
                 <span className="text-sm font-semibold">
-                  {new Date(order.created_at).toLocaleDateString("en-US", {
-                    year: "numeric",
-                    month: "short",
-                    day: "numeric",
-                  })}
+                  {order.created_at}
                 </span>
               </p>
               <p className="rounded-full px-3 py-0.5 text-xs capitalize">
@@ -135,7 +131,7 @@ export default function OrderDetailsPage() {
                   </th>
                   <th className="py-3 px-4">
                     <div className="flex items-center justify-center">
-                      <p className="font-medium text-gray-500">Weight</p>
+                      <p className="font-medium text-gray-500">Brand</p>
                     </div>
                   </th>
                   <th className="py-3 px-4">
@@ -168,7 +164,11 @@ export default function OrderDetailsPage() {
                       <div className="flex items-center">
                         <div className="flex items-center gap-3">
                           <div className="h-[50px] w-[50px] overflow-hidden rounded-full">
-                            <img src="/images/logo/irtaza.webp" alt="Product" />
+                          <img src={item.product.image ? `${process.env.NEXT_PUBLIC_BACKEND_URL_PUBLIC}${item.product.image}`: "/images/items/atta.webp"} alt="Product"
+                          onError={(e) => {
+                            e.currentTarget.src = "/images/items/atta.webp";
+                          }}
+                           />
                           </div>
                           <div>
                             <p className="font-medium text-gray-800 text-theme-sm dark:text-white/90 capitalize">
@@ -184,21 +184,21 @@ export default function OrderDetailsPage() {
                     <td className="py-3 px-4">
                       <div className="flex items-center justify-center">
                         <p className="text-gray-500 text-theme-sm dark:text-gray-400">
-                          Milk
+                        {item.product.type}
                         </p>
                       </div>
                     </td>
                     <td className="py-3 px-4">
                       <div className="flex items-center justify-center">
                         <p className="text-gray-500 text-theme-sm dark:text-gray-400">
-                          1
+                          {item.product.brand}
                         </p>
                       </div>
                     </td>
                     <td className="py-3 px-4">
                       <div className="flex items-center justify-center">
                         <p className="text-gray-500 text-theme-sm dark:text-gray-400">
-                          Ltr
+                        {item.product.measure}
                         </p>
                       </div>
                     </td>

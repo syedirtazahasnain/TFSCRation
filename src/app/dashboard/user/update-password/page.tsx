@@ -46,7 +46,7 @@ export default function page() {
       }
 
       const response = await fetch(
-        "http://127.0.0.1:8000/api/password-update",
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/password-update`,
         {
           method: "POST",
           headers: {

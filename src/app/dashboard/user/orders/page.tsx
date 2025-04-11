@@ -40,7 +40,7 @@ export default function OrdersPage() {
         }
 
         const response = await fetch(
-          `http://127.0.0.1:8000/api/orders?page=${currentPage}`,
+          `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/orders?page=${currentPage}`,
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -120,11 +120,7 @@ export default function OrdersPage() {
                       {order.status}
                     </td>
                     <td className="px-6 py-4 text-sm text-gray-900">
-                      {new Date(order.created_at).toLocaleDateString("en-US", {
-                        year: "numeric",
-                        month: "short",
-                        day: "numeric",
-                      })}
+                      {order.created_at}
                     </td>
                     <td className="px-6 py-4 text-sm text-gray-900 font-semibold">
                       ${order.grand_total}

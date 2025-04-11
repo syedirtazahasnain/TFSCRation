@@ -22,7 +22,7 @@ export default function Header() {
       }
 
       try {
-        const response = await fetch("http://127.0.0.1:8000/api/user-details", {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/user-details`, {
           headers: {
             Authorization: `Bearer ${token}`,
             Accept: "application/json",
@@ -53,7 +53,7 @@ export default function Header() {
         return;
       }
 
-      const response = await fetch("http://127.0.0.1:8000/api/logout", {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/logout`, {
         method: "POST",
         headers: {
           Authorization: `Bearer ${token}`,
@@ -103,7 +103,7 @@ export default function Header() {
       }
 
       const response = await fetch(
-        "http://127.0.0.1:8000/api/admin/orders/all",
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/admin/orders/all`,
         {
           headers: {
             Authorization: `Bearer ${token}`,

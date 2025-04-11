@@ -38,7 +38,7 @@ export default function OrdersPage() {
           return;
         }
 
-        const response = await fetch(`http://127.0.0.1:8000/api/admin/orders/all?page=${currentPage}`, {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/admin/orders/all?page=${currentPage}`, {
           headers: {
             Authorization: `Bearer ${token}`,
           },
@@ -78,7 +78,7 @@ export default function OrdersPage() {
                   Status: <span className="capitalize">{order.status}</span>
                 </p>
                 <p className="text-gray-600">
-                  Date: {new Date(order.created_at).toLocaleDateString()}
+                  Date: {order.created_at}
                 </p>
                 <p className="text-lg font-bold">Total: ${order.grand_total}</p>
               </div>

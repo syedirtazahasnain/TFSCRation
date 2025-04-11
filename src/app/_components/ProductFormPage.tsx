@@ -37,7 +37,7 @@ export default function ProductFormPage({ productId }: ProductFormProps) {
       try {
         const token = localStorage.getItem('token');
         const response = await fetch(
-          `http://127.0.0.1:8000/api/admin/products/${productId}`,
+          `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/admin/products/${productId}`,
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -50,7 +50,7 @@ export default function ProductFormPage({ productId }: ProductFormProps) {
         const data = await response.json();
         setProduct(data.data);
         if (data.data.image) {
-          setImagePreview(`http://127.0.0.1:8000/storage/${data.data.image}`);
+          setImagePreview(`${process.env.NEXT_PUBLIC_BACKEND_URL_PUBLIC}${data.data.image}`);
         }
       } catch (error) {
         toast.error(error instanceof Error ? error.message : 'Failed to load product');
@@ -102,7 +102,7 @@ export default function ProductFormPage({ productId }: ProductFormProps) {
       }
 
       const response = await fetch(
-        'http://127.0.0.1:8000/api/admin/store-products',
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/admin/store-products`,
         {
           method: 'POST',
           headers: {

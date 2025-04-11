@@ -62,7 +62,7 @@ export default function ProductListPage() {
       }
 
       const response = await fetch(
-        `http://127.0.0.1:8000/api/products?page=${page}`,
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/products?page=${page}`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -95,7 +95,7 @@ export default function ProductListPage() {
         return;
       }
 
-      const response = await fetch("http://127.0.0.1:8000/api/cart", {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/cart`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -139,7 +139,7 @@ export default function ProductListPage() {
         return;
       }
 
-      const response = await fetch("http://127.0.0.1:8000/api/cart/add", {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/cart/add`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -272,7 +272,7 @@ export default function ProductListPage() {
       }
 
       const response = await fetch(
-        `http://127.0.0.1:8000/api/cart/remove/${itemId}`,
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/cart/remove/${itemId}`,
         {
           method: "DELETE",
           headers: {
@@ -305,7 +305,7 @@ export default function ProductListPage() {
         return;
       }
 
-      const response = await fetch("http://127.0.0.1:8000/api/cart/clear", {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/cart/clear`, {
         method: "DELETE",
         headers: {
           Authorization: `Bearer ${token}`,
@@ -337,7 +337,7 @@ export default function ProductListPage() {
         return;
       }
 
-      const response = await fetch("http://127.0.0.1:8000/api/orders/place", {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/orders/place`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -427,9 +427,12 @@ export default function ProductListPage() {
                         >
                           <div className="bg-[#f9f9f9] rounded-t-lg overflow-hidden h-[150px] w-full">
                             <img
-                              src="/images/items/atta.webp"
+                              src={product.image ? `${process.env.NEXT_PUBLIC_BACKEND_URL_PUBLIC}${product.image}` : "/images/items/atta.webp"} 
                               alt=""
                               className="w-full h-full object-cover"
+                              onError={(e) => {
+                                e.currentTarget.src = "/images/items/atta.webp";
+                              }}
                             />
                           </div>
                           <div className="py-2 px-3">
@@ -537,6 +540,7 @@ export default function ProductListPage() {
 
                       <ul className="overflow-y-auto">
                         {cart.map((item) => {
+                          console.log("Cart Item:", item);
                           const product =
                             item.product ||
                             allProducts.find((p) => p.id === item.product_id);
@@ -544,9 +548,16 @@ export default function ProductListPage() {
                             <li key={item.id || item.product_id} className="mb-2 p-[10px] rounded-[15px] bg-[#fff] relative w-full flex items-center gap-[10px]">
                               <div className="">
                                 <div className="w-[50px] rounded-lg h-full overflow-hidden"><img
-                                  src="/images/items/atta.webp"
-                                  alt=""
+                                  src={
+                                    item.product?.image 
+                                      ? `${process.env.NEXT_PUBLIC_BACKEND_URL_PUBLIC}${item.product.image}` 
+                                      : "/images/items/atta.webp"
+                                  } 
+                                  alt={item.product?.name || "Product image"}
                                   className="w-full h-full object-cover"
+                                  onError={(e) => {
+                                    e.currentTarget.src = "/images/items/atta.webp";
+                                  }}
                                 />
                                 </div>
                               </div>
@@ -561,7 +572,7 @@ export default function ProductListPage() {
                                       </span>
                                     </p>
                                     <p className="my-0 text-sm px-[10px] bg-[#2b3990] rounded-[5px] text-[#fff]">
-                                      {item.unit_price} <span className="text-xs pl-[3px] font-semibold">Per - Unit</span>
+                                      {item.unit_price} <span className="text-xs pl-[3px] font-semibold">Per - {item.product?.measure ?? "Unit"}</span>
                                     </p>
                                   </div>
                                 </div>
@@ -592,67 +603,6 @@ export default function ProductListPage() {
 
           </>
         )}
-
-        {/* <div>
-          {isCartOpen && (
-            <div className="h-screen fixed top-0 right-0 bg-[#f9f9f9] p-6 overflow-y-auto">
-              <h2 className="text-xl font-bold mb-4">Cart</h2>
-              {cart.length === 0 ? (
-                <p>Your cart is empty.</p>
-              ) : (
-                <>
-                  <ul className="max-h-64 overflow-y-auto">
-                    {cart.map((item) => {
-                      const product =
-                        item.product ||
-                        allProducts.find((p) => p.id === item.product_id);
-                      return (
-                        <li key={item.id || item.product_id} className="mb-4">
-                          <div className="flex justify-between items-center">
-                            <div>
-                              <h3 className="font-semibold">{product?.name}</h3>
-                              <p>Quantity: {item.quantity}</p>
-                              <p>
-                                Price: ${item.unit_price?.toFixed(2)} ×{" "}
-                                {item.quantity} = ${item.total?.toFixed(2)}
-                              </p>
-                            </div>
-                            <button
-                              onClick={() => removeFromCart(item.id!)}
-                              className="text-red-500 hover:text-red-700"
-                            >
-                              Remove
-                            </button>
-                          </div>
-                        </li>
-                      );
-                    })}
-                  </ul>
-                  <div className="mt-4">
-                    <p className="font-bold">Total Quantity: {totalQuantity}</p>
-                    <p className="font-bold">
-                      Total Price: ${totalPrice.toFixed(2)}
-                    </p>
-                  </div>
-                  <div className="flex space-x-2 mt-4">
-                    <button
-                      onClick={clearCart}
-                      className="flex-1 bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600"
-                    >
-                      Clear Cart
-                    </button>
-                    <button
-                      onClick={submitCart}
-                      className="flex-1 bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600"
-                    >
-                      Submit Cart
-                    </button>
-                  </div>
-                </>
-              )}
-            </div>
-          )}
-        </div> */}
       </div>
 
       {/* Cart */}
@@ -692,9 +642,16 @@ export default function ProductListPage() {
                   <li key={item.id || item.product_id} className="mb-2 p-[10px] rounded-[15px] bg-[#fff] relative w-full flex items-center gap-[10px]">
                     <div className="">
                       <div className="w-[50px] rounded-lg h-full overflow-hidden"><img
-                        src="/images/items/atta.webp"
-                        alt=""
-                        className="w-full h-full object-cover"
+                       src={
+                        item.product?.image 
+                          ? `${process.env.NEXT_PUBLIC_BACKEND_URL_PUBLIC}${item.product.image}` 
+                          : "/images/items/atta.webp"
+                      } 
+                      alt={item.product?.name || "Product image"}
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        e.currentTarget.src = "/images/items/atta.webp";
+                      }}
                       />
                       </div>
                     </div>
@@ -709,7 +666,7 @@ export default function ProductListPage() {
                             </span>
                           </p>
                           <p className="my-0 text-sm px-[10px] bg-[#2b3990] rounded-[5px] text-[#fff]">
-                            {item.unit_price} <span className="text-xs pl-[3px] font-semibold">Per - Unit</span>
+                            {item.unit_price} <span className="text-xs pl-[3px] font-semibold">Per - {item.product?.measure ?? "Unit"}</span>
                           </p>
                         </div>
                       </div>

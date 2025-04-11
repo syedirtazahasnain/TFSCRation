@@ -57,7 +57,7 @@ function PasswordUpdateForm() {
       }
 
       const response = await fetch(
-        "http://127.0.0.1:8000/api/password-update",
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/password-update`,
         {
           method: "POST",
           headers: {
@@ -215,7 +215,7 @@ export default function page({ my_role }: UserData) {
           return;
         }
 
-        const response = await fetch("http://127.0.0.1:8000/api/user-details", {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/user-details`, {
           headers: {
             Authorization: `Bearer ${token}`,
             Accept: "application/json",
@@ -276,7 +276,12 @@ export default function page({ my_role }: UserData) {
             <div>
               <div className="flex flex-col items-center w-full gap-6 xl:flex-row">
                 <div className="w-20 h-20 overflow-hidden border border-gray-200 rounded-full dark:border-gray-800">
-                  <img src="/images/logo/irtaza.webp" alt="user" />
+                  <img 
+                  src={user.image ? `${process.env.NEXT_PUBLIC_BACKEND_URL_PUBLIC}${user.image}` : "/images/logo/irtaza.webp"} 
+                  onError={(e) => {
+                  e.currentTarget.src = "/images/logo/irtaza.webp";
+                  }}
+                  alt="user" />
                 </div>
                 <div className="order-3 xl:order-2">
                   <h4 className="mb-2 text-lg font-semibold text-center text-gray-800 dark:text-white/90 xl:text-left">
@@ -411,6 +416,14 @@ export default function page({ my_role }: UserData) {
                     </p>
                     <p className="text-sm font-medium text-gray-800 dark:text-white/90">
                       {user.my_role}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="mb-2 text-xs leading-normal text-gray-500 dark:text-gray-400">
+                      Member Since
+                    </p>
+                    <p className="text-sm font-medium text-gray-800 dark:text-white/90">
+                      {user.created_at}
                     </p>
                   </div>
                 </div>
